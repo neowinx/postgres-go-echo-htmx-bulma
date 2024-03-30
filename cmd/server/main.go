@@ -2,12 +2,26 @@ package main
 
 import (
 	"context"
+	"html/template"
+	"io"
 	"log"
 	"os"
+	"postgres-go-echo-htmx-bulma/internal/handler"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
+
+// Struct to hold template rendering
+type TemplateRenderer struct {
+    templates *template.Template
+}
+
+// Render renders the HTML templates
+func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+    // Execute the template with the provided data
+    return t.templates.ExecuteTemplate(w, name, data)
+}
 
 func main() {
 
@@ -40,10 +54,12 @@ func main() {
 	// Create a new Echo instance
 	e := echo.New()
 
+  e.Renderer = &TemplateRenderer{ 
+    templates: template.Must(template.ParseFiles("web/templates/index.html", "web/templates/heroes/list.html")),
+  }
+
 	// Initialize handlers and pass dbpool to them
 	initHandlers(e, dbpool)
-
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Start the server
 	e.Logger.Fatal(e.Start(":8080"))
@@ -52,7 +68,10 @@ func main() {
 // Initialize handlers and pass dbpool to them
 func initHandlers(e *echo.Echo, dbpool *pgxpool.Pool) {
 	// Create handlers and pass dbpool to them
+	e.GET("/", handler.HomeHandler())
 	e.GET("/heroes", handler.ListHeroHandler(dbpool))
+	e.GET("/heroes/add", handler.ListHeroHandler(dbpool))
+  e.GET("/heroes/edit/:id", handler.ListHeroHandler(dbpool))
 	e.POST("/heroes", handler.CreateHeroHandler(dbpool))
 	e.GET("/heroes/:id", handler.GetHeroHandler(dbpool))
 	e.PUT("/heroes/:id", handler.UpdateHeroHandler(dbpool))
