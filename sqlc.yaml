@@ -1,0 +1,11 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "db/query.sql"
+    schema: "db/schema.sql"
+    database:
+      uri: postgresql://postgres:postgres@localhost:5432/super
+    gen:
+      go:
+        sql_package: "pgx/v5"
+        out: "pkg/db"
